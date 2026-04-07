@@ -2,7 +2,7 @@
 ## Đề tài: **Nghiên cứu và xây dựng Hệ thống quản lý và giám sát ATTT mạng ứng dụng công nghệ Big Data và AI**
 
 <p align="center">
-  <img alt="Status" src="https://img.shields.io/badge/Tr%E1%BA%A1ng%20th%C3%A1i-%C4%90ang%20nghi%C3%AAn%20c%E1%BB%A9u-blue">
+  <img alt="Status" src="https://img.shields.io/badge/Tr%E1%BA%A1ng%20th%C3%A1i-%C4%90%C3%A3%20nghi%C3%AAn%20c%E1%BB%A9u%20xong-brightgreen">
   <img alt="Model" src="https://img.shields.io/badge/M%C3%B4%20h%C3%ACnh-XGBoost-success">
   <img alt="Dataset" src="https://img.shields.io/badge/Dataset-CIC--IDS--2018-orange">
   <img alt="Field" src="https://img.shields.io/badge/L%C4%A9nh%20v%E1%BB%B1c-An%20to%C3%A0n%20th%C3%B4ng%20tin-red">
@@ -29,12 +29,11 @@ Trong hướng tiếp cận hiện tại, nhóm sử dụng thuật toán **XGBo
 
 | Mục | Nội dung |
 |---|---|
-| **Người tham gia** | `................................................` |
-| **Giảng viên hướng dẫn** | `................................................` |
+| **Người tham gia** | `En2tiwg Nguyễn (chủ trì) ` |
+|                    | `Phạm Téo ` |
+| **Giảng viên hướng dẫn** | `TS.Cao Văn Lợi` |
 | **Lĩnh vực** | An toàn thông tin mạng / Phân tích dữ liệu / Trí tuệ nhân tạo |
-| **Thời gian báo cáo** | `................................................` |
-
-> Bạn chỉ cần thay các dòng có dấu `........` bằng thông tin thật của nhóm.
+| **Thời gian báo cáo** | `02/04/2026` |
 
 ---
 
@@ -127,6 +126,7 @@ Qua quá trình thực hiện đề tài, có thể rút ra nhiều bài học q
 
 - **Trang dataset CIC-IDS-2018:** https://www.unb.ca/cic/datasets/ids-2018.html
 - **Danh mục datasets của Canadian Institute for Cybersecurity:** https://www.unb.ca/cic/datasets/
+- **Kaggel : https://www.kaggle.com/datasets/solarmainframe/ids-intrusion-csv
 
 ---
 
@@ -138,6 +138,7 @@ Trong giai đoạn tiếp theo, đề tài có thể phát triển theo các hư
 - Tìm bộ dữ liệu phù hợp hơn với bài toán **network flow monitoring**.
 - Kết hợp thêm dữ liệu log thực tế từ firewall, IDS/IPS, router, switch hoặc SIEM.
 - Xây dựng pipeline thu thập dữ liệu gần với môi trường thật hơn.
+- **Xây dựng Network IDS using Hybrid Model : https://www.kaggle.com/code/likhithasaila/network-ids-using-hybrid-model
 
 ### 9.2. Cải thiện mô hình
 - So sánh XGBoost với các mô hình khác như:
@@ -177,16 +178,5 @@ Dù hướng đi hiện tại còn hạn chế, quá trình thực hiện vẫn 
 
 ---
 
-## 11. Gợi ý cập nhật nhanh trước khi nộp / đưa lên GitHub
 
-Bạn nên sửa lại các mục sau cho hoàn chỉnh:
-- Tên thành viên
-- Tên giảng viên hướng dẫn
-- Thời gian báo cáo
-- Link tài liệu nhóm đang dùng thật sự
-- Kết quả thực nghiệm cụ thể (nếu đã có)
-- Hình ảnh kiến trúc hệ thống hoặc sơ đồ nghiên cứu (nếu có)
-
----
-
-<p align="center"><i>README được soạn để giới thiệu nhanh đề tài NCKH theo hướng học thuật, dễ đưa lên GitHub và dễ chỉnh sửa tiếp.</i></p>
+<p align="center"><i>Telegram: @Ens_bui</i></p>
