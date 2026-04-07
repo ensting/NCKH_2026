@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hướng dẫn cài đặt</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/common.js"></script>
+</head>
+<body>
+<script>
+function renderGuidePage() {
+  layout("guide", `
+    <div class="card">
+      <h2>Hướng dẫn cài đặt thiết bị theo dõi</h2>
+      <div style="margin-bottom: 14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="/download/zeek-agent" download><button class="btn">Tải file zeek_agent.py</button></a>
+        <a href="/download/guide" download><button class="btn">Tải file hướng dẫn .txt</button></a>
+      </div>
+      <div class="guide-box" id="guide-content">Đang tải hướng dẫn...</div>
+    </div>
+  `);
+}
+
+async function loadInstallationGuide() {
+  try {
+    const res = await fetch("/installation-guide");
+    const text = await res.text();
+    document.getElementById("guide-content").textContent = text;
+  } catch (e) {
+    document.getElementById("guide-content").textContent = "Không tải được file hướng dẫn.";
+  }
+}
+
+(async function() {
+  renderGuidePage();
+  await initialLoadCommon();
+  await loadInstallationGuide();
+  connectUIWebSocket(() => {});
+})();
+</script>
+</body>
+</html>

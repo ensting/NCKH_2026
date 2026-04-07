@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Log</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/common.js"></script>
+</head>
+<body>
+<script>
+function renderLogsPage() {
+  layout("logs", `
+    <div class="card">
+      <h2>Danh sách log Zeek</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr id="log-header"></tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </div>
+  `);
+}
+
+function renderLogs() {
+  if (!Array.isArray(zeekEvents) || zeekEvents.length === 0) {
+    document.getElementById("log-header").innerHTML = "";
+    document.getElementById("log-body").innerHTML = "";
+    return;
+  }
+
+  const baseCols = [
+    "machine_id","timestamp","src_ip","src_port","dest_ip","dest_port","proto","service",
+    "duration","orig_bytes","resp_bytes","orig_pkts","resp_pkts","conn_state","history",
+    "prediction_numeric","prediction","confidence","threshold","model_version","received_at"
+  ];
+
+  const priorityFeatureCols = ["Flow Byts/s","Flow Pkts/s","Fwd Pkts/s","Bwd Pkts/s"];
+
+  const featureSet = new Set();
+  zeekEvents.forEach(item => {
+    Object.keys(item.features || {}).forEach(k => featureSet.add(k));
+  });
+
+  const allFeatureCols = Array.from(featureSet);
+  const remainingFeatureCols = allFeatureCols.filter(c => !priorityFeatureCols.includes(c));
+  const featureCols = [...priorityFeatureCols.filter(c => allFeatureCols.includes(c)), ...remainingFeatureCols];
+
+  const headers = [...baseCols, ...featureCols];
+  document.getElementById("log-header").innerHTML = headers.map(h => `<th>${h}</th>`).join("");
+
+  document.getElementById("log-body").innerHTML = zeekEvents.map(item => {
+    const row = [];
+    baseCols.forEach(col => {
+      let val = item[col] ?? "";
+      if (col === "timestamp") val = formatTimestamp(val);
+      else if (col === "confidence") val = Number(val || 0).toFixed(6);
+      row.push(`<td>${val}</td>`);
+    });
+    featureCols.forEach(col => row.push(`<td>${item.features?.[col] ?? 0}</td>`));
+    return `<tr>${row.join("")}</tr>`;
+  }).join("");
+}
+
+(async function() {
+  renderLogsPage();
+  await initialLoadCommon();
+  renderLogs();
+  connectUIWebSocket((type) => {
+    if (type === "zeek_event") renderLogs();
+  });
+})();
+</script>
+</body>
+</html>

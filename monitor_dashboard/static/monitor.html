@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Giám sát</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="/js/common.js"></script>
+</head>
+<body>
+<script>
+function renderMonitorPage() {
+  layout("monitor", `
+    <div class="card">
+      <h2>Quản lý máy theo dõi</h2>
+      <div class="inline-form">
+        <input id="new-machine-id" placeholder="machine_id, ví dụ ubuntu-vm-02">
+        <input id="new-machine-hostname" placeholder="hostname">
+        <input id="new-machine-ip" placeholder="ip">
+        <button onclick="registerMachine()">Thêm máy</button>
+      </div>
+    </div>
+
+    <div id="machine-grid" class="grid"></div>
+  `);
+}
+
+function renderMachineCard(machine) {
+  const t = parseUpdatedTime(machine.updated_at);
+  let online = false;
+  if (t) {
+    const diffSec = (Date.now() - t.getTime()) / 1000;
+    online = diffSec <= 3;
+  }
+
+  const statusText = online ? "Đang kết nối" : "Không kết nối";
+  const statusClass = online ? "status-online" : "status-offline";
+
+  return `
+    <div class="card">
+      <h2>Máy: ${machine.machine_id || "-"}</h2>
+      <div class="row"><span class="label">Trạng thái:</span> <span class="${statusClass}">${statusText}</span></div>
+      <div class="row"><span class="label">Hostname:</span> ${machine.hostname || "-"}</div>
+      <div class="row"><span class="label">IP:</span> ${machine.ip || "-"}</div>
+      <div class="row"><span class="label">Cập nhật:</span> ${machine.updated_at || "-"}</div>
+
+      <div class="row"><span class="label">CPU:</span> ${Number(machine.cpu_percent || 0).toFixed(1)}%</div>
+      <div class="bar-wrap"><div class="bar" style="width:${Math.min(100, Number(machine.cpu_percent || 0))}%">${Number(machine.cpu_percent || 0).toFixed(1)}%</div></div>
+
+      <div class="row" style="margin-top:10px;"><span class="label">RAM:</span> ${Number(machine.ram_used_mb || 0).toFixed(1)} / ${Number(machine.ram_total_mb || 0).toFixed(1)} MB</div>
+      <div class="bar-wrap"><div class="bar" style="width:${Math.min(100, Number(machine.ram_percent || 0))}%">${Number(machine.ram_percent || 0).toFixed(1)}%</div></div>
+
+      <div class="row" style="margin-top:10px;"><span class="label">Disk:</span> ${Number(machine.disk_used_gb || 0).toFixed(1)} / ${Number(machine.disk_total_gb || 0).toFixed(1)} GB</div>
+      <div class="bar-wrap"><div class="bar" style="width:${Math.min(100, Number(machine.disk_percent || 0))}%">${Number(machine.disk_percent || 0).toFixed(1)}%</div></div>
+    </div>
+  `;
+}
+
+function renderMachines() {
+  const grid = document.getElementById("machine-grid");
+  const data = Object.values(machineStates);
+
+  if (!Array.isArray(data) || data.length === 0) {
+    grid.innerHTML = `<div class="card"><h2>Chưa có máy nào gửi dữ liệu</h2></div>`;
+    return;
+  }
+
+  grid.innerHTML = data.map(renderMachineCard).join("");
+}
+
+async function registerMachine() {
+  const machine_id = document.getElementById("new-machine-id").value.trim();
+  const hostname = document.getElementById("new-machine-hostname").value.trim();
+  const ip = document.getElementById("new-machine-ip").value.trim();
+
+  if (!machine_id) {
+    alert("Nhập machine_id trước");
+    return;
+  }
+
+  const res = await fetch("/machines/register", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ machine_id, hostname, ip })
+  });
+
+  const data = await res.json();
+  if (data.status === "ok") {
+    document.getElementById("new-machine-id").value = "";
+    document.getElementById("new-machine-hostname").value = "";
+    document.getElementById("new-machine-ip").value = "";
+  } else {
+    alert(data.message || "Lỗi thêm máy");
+  }
+}
+
+(async function() {
+  renderMonitorPage();
+  await initialLoadCommon();
+  renderMachines();
+  connectUIWebSocket((type) => {
+    if (type === "system_info") renderMachines();
+  });
+})();
+</script>
+</body>
+</html>

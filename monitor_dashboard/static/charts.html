@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Biểu đồ</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/common.js"></script>
+</head>
+<body>
+<script>
+const dynamicCharts = {};
+
+function destroyChartIfExists(key) {
+  if (dynamicCharts[key]) {
+    dynamicCharts[key].destroy();
+    delete dynamicCharts[key];
+  }
+}
+
+function createLineChart(canvasId, chartKey, labels, dataValues, labelText) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  destroyChartIfExists(chartKey);
+
+  dynamicCharts[chartKey] = new Chart(canvas.getContext("2d"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{ label: labelText, data: dataValues, fill: false, tension: 0.2 }]
+    },
+    options: { responsive: true, animation: false }
+  });
+}
+
+function createPieChart(canvasId, chartKey, countObj, labelText) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  destroyChartIfExists(chartKey);
+
+  dynamicCharts[chartKey] = new Chart(canvas.getContext("2d"), {
+    type: "pie",
+    data: {
+      labels: Object.keys(countObj),
+      datasets: [{ label: labelText, data: Object.values(countObj) }]
+    },
+    options: { responsive: true, animation: false }
+  });
+}
+
+function countValues(items, key) {
+  const counts = {};
+  items.forEach(item => {
+    const value = item[key] || "(empty)";
+    counts[value] = (counts[value] || 0) + 1;
+  });
+  return counts;
+}
+
+function renderChartsPage() {
+  layout("charts", `
+    <div class="card">
+      <h2>Biểu đồ theo từng máy</h2>
+      <div id="machine-line-and-pie-container"></div>
+    </div>
+  `);
+}
+
+function renderCharts() {
+  const container = document.getElementById("machine-line-and-pie-container");
+  if (!Array.isArray(zeekEvents) || zeekEvents.length === 0) {
+    container.innerHTML = `<div>Chưa có dữ liệu biểu đồ</div>`;
+    return;
+  }
+
+  const byMachine = {};
+  zeekEvents.forEach(item => {
+    const id = item.machine_id || "unknown";
+    if (!byMachine[id]) byMachine[id] = [];
+    byMachine[id].push(item);
+  });
+
+  container.innerHTML = "";
+
+  Object.keys(byMachine).forEach(machineId => {
+    const machineEvents = byMachine[machineId];
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "machine-chart-group";
+    wrapper.innerHTML = `
+      <div class="chart-title">Máy: ${machineId}</div>
+      <div class="grid">
+        <div class="card chart-box">
+          <div class="chart-title">Biểu đồ đường packet / giây</div>
+          <canvas id="line-chart-${machineId}"></canvas>
+        </div>
+        <div class="card chart-box">
+          <div class="chart-title">Tỷ lệ src_ip</div>
+          <canvas id="srcip-chart-${machineId}"></canvas>
+        </div>
+        <div class="card chart-box">
+          <div class="chart-title">Tỷ lệ proto</div>
+          <canvas id="proto-chart-${machineId}"></canvas>
+        </div>
+        <div class="card chart-box">
+          <div class="chart-title">Tỷ lệ service</div>
+          <canvas id="service-chart-${machineId}"></canvas>
+        </div>
+      </div>
+    `;
+    container.appendChild(wrapper);
+
+    const packetBySecond = {};
+    machineEvents.forEach(item => {
+      const sec = String(item.timestamp).split(".")[0];
+      const totalPkts = Number(item.orig_pkts || 0) + Number(item.resp_pkts || 0);
+      packetBySecond[sec] = (packetBySecond[sec] || 0) + totalPkts;
+    });
+
+    const sortedSecs = Object.keys(packetBySecond).sort((a, b) => Number(a) - Number(b));
+
+    createLineChart(`line-chart-${machineId}`, `line-${machineId}`,
+      sortedSecs.map(formatSecondLabel),
+      sortedSecs.map(sec => packetBySecond[sec]),
+      `Packet / giây - ${machineId}`);
+
+    createPieChart(`srcip-chart-${machineId}`, `srcip-${machineId}`,
+      countValues(machineEvents, "src_ip"), `src_ip - ${machineId}`);
+
+    createPieChart(`proto-chart-${machineId}`, `proto-${machineId}`,
+      countValues(machineEvents, "proto"), `proto - ${machineId}`);
+
+    createPieChart(`service-chart-${machineId}`, `service-${machineId}`,
+      countValues(machineEvents, "service"), `service - ${machineId}`);
+  });
+}
+
+(async function() {
+  renderChartsPage();
+  await initialLoadCommon();
+  renderCharts();
+  connectUIWebSocket((type) => {
+    if (type === "zeek_event") renderCharts();
+  });
+})();
+</script>
+</body>
+</html>

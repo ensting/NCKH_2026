@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Alert log</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/common.js"></script>
+</head>
+<body>
+<script>
+let alertChart = null;
+
+function renderAlertsPage() {
+  layout("alerts", `
+    <div class="card">
+      <h2>Điều khiển cảnh báo</h2>
+      <label><input type="checkbox" id="enable-popup" checked> Bật popup cảnh báo màu đỏ</label>
+    </div>
+
+    <div class="card">
+      <h2>Biểu đồ tổng số alert phát hiện</h2>
+      <canvas id="alertChart" height="100"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Danh sách Alert log</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Machine ID</th>
+              <th>Thời gian</th>
+              <th>Flow</th>
+              <th>Proto</th>
+              <th>Service</th>
+              <th>State</th>
+              <th>Confidence</th>
+              <th>Threshold</th>
+              <th>Prediction</th>
+            </tr>
+          </thead>
+          <tbody id="alert-body"></tbody>
+        </table>
+      </div>
+    </div>
+  `);
+
+  const ctx = document.getElementById("alertChart").getContext("2d");
+  alertChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: "Tổng alert",
+        data: [],
+        borderColor: "red",
+        backgroundColor: "rgba(255,0,0,0.08)",
+        fill: false,
+        tension: 0.2
+      }]
+    },
+    options: { responsive: true, animation: false }
+  });
+}
+
+function renderAlerts() {
+  const tbody = document.getElementById("alert-body");
+  tbody.innerHTML = alertEvents.map(item => `
+    <tr>
+      <td>${item.machine_id || "-"}</td>
+      <td>${formatTimestamp(item.timestamp)}</td>
+      <td>${item.src_ip}:${item.src_port} -> ${item.dest_ip}:${item.dest_port}</td>
+      <td>${item.proto}</td>
+      <td>${item.service}</td>
+      <td>${item.conn_state}</td>
+      <td>${Number(item.confidence).toFixed(6)}</td>
+      <td>${item.threshold}</td>
+      <td>${item.prediction}</td>
+    </tr>
+  `).join("");
+
+  const countBySec = {};
+  alertEvents.forEach(item => {
+    const sec = String(item.timestamp).split(".")[0];
+    countBySec[sec] = (countBySec[sec] || 0) + 1;
+  });
+
+  const secs = Object.keys(countBySec).sort((a, b) => Number(a) - Number(b));
+  alertChart.data.labels = secs.map(formatSecondLabel);
+  alertChart.data.datasets[0].data = secs.map(s => countBySec[s]);
+  alertChart.update();
+
+  if (alertEvents.length > 0 && alertEvents[0].id > lastShownAlertId) {
+    showRedPopup(alertEvents[0]);
+    lastShownAlertId = alertEvents[0].id;
+  }
+}
+
+(async function() {
+  renderAlertsPage();
+  await initialLoadCommon();
+  renderAlerts();
+  connectUIWebSocket((type) => {
+    if (type === "alert_event") renderAlerts();
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+HƯỚNG DẪN CÀI ĐẶT THIẾT BỊ THEO DÕI
+
+1. Cập nhật hệ thống:
+   sudo apt update && sudo apt upgrade -y
+
+2. Cài Python3 và pip:
+   sudo apt install python3 python3-pip -y
+
+3. Cài thư viện Python cần thiết:
+   pip3 install websockets psutil
+
+4. Cài Zeek theo 1 trong 2 cách:
+
+   Cách 1 - Cài trực tiếp:
+   sudo apt install zeek -y
+   Kiểm tra:
+   zeek --version
+
+   Cách 2 - Cài bằng Docker:
+   sudo apt install docker.io -y
+   sudo systemctl enable docker
+   sudo systemctl start docker
+   sudo mkdir -p /opt/zeek-docker-logs
+   sudo docker run --name zeek-monitor --net=host \
+     -v /opt/zeek-docker-logs:/opt/zeek/logs \
+     -d blacktop/zeek:latest
+
+5. Kiểm tra card mạng:
+   ip a
+
+6. Nếu cài trực tiếp, chạy Zeek để tạo log (ví dụ eth0):
+   sudo zeek -i eth0
+
+7. Nếu dùng Docker, kiểm tra container:
+   sudo docker ps
+   sudo docker logs zeek-monitor
+
+8. Kiểm tra file log Zeek:
+   /opt/zeek/logs/current/conn.log
+   hoặc:
+   /opt/zeek-docker-logs/conn.log
+
+9. Xem log đang cập nhật:
+   tail -f /opt/zeek/logs/current/conn.log
+   hoặc:
+   tail -f /opt/zeek-docker-logs/conn.log
+
+10. Chỉnh sửa file zeek_agent.py:
+   - sửa MACHINE_ID cho từng máy
+   - sửa WS_SERVER_URL thành IP máy Windows 11
+   - sửa LOG_PATH đúng với đường dẫn file conn.log
+
+11. Chạy agent:
+   python3 zeek_agent.py
+
+12. Nếu có nhiều máy theo dõi:
+   - mỗi máy dùng một MACHINE_ID khác nhau
+   - cùng gửi về server Windows 11
+
+13. Lưu ý:
+   - mở firewall cổng 8000 trên Windows 11
+   - đảm bảo Ubuntu VM ping được Windows 11
+   - Zeek phải chạy trước thì agent mới đọc được log
